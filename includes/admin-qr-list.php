@@ -1,140 +1,170 @@
 <?php
 if (!defined('ABSPATH')) exit;
 
-// Add QR Code List to Admin Menu
-function qrg_admin_menu() {
-    add_menu_page(
-        'QR Codes List',
-        'QR Codes',
-        'manage_options',
-        'qrg-admin-qr-list',
-        'qrg_admin_qr_list_page',
-        'dashicons-qrcode',
-        25
-    );
-}
-add_action('admin_menu', 'qrg_admin_menu');
-
-// QR Code List Page
 function qrg_admin_qr_list_page() {
-    global $wpdb;
-
-    $post_type = isset($_GET['post_type']) ? sanitize_text_field($_GET['post_type']) : 'product';
-    $layout = isset($_GET['layout']) ? sanitize_text_field($_GET['layout']) : 'table'; 
+    $post_type = isset($_GET['post_type']) ? sanitize_text_field($_GET['post_type']) : 'post';
     $paged = isset($_GET['paged']) ? max(1, intval($_GET['paged'])) : 1;
-    $per_page = 12;
-    $offset = ($paged - 1) * $per_page;
-    $date_filter = isset($_GET['date_filter']) ? sanitize_text_field($_GET['date_filter']) : '';
-    $category_filter = isset($_GET['category_filter']) ? sanitize_text_field($_GET['category_filter']) : '';
+    $posts_per_page = 12;
 
-    // Fetch Posts
     $query_args = [
         'post_type'      => $post_type,
-        'posts_per_page' => $per_page,
+        'posts_per_page' => $posts_per_page,
         'paged'          => $paged,
     ];
 
-    if (!empty($date_filter)) {
-        $query_args['date_query'] = [['after' => $date_filter]];
+    if ($post_type === 'post' || $post_type === 'product') {
+        if (!empty($_GET['category'])) {
+            $query_args['category_name'] = sanitize_text_field($_GET['category']);
+        }
     }
 
-    if (!empty($category_filter)) {
-        $query_args['category_name'] = $category_filter;
+    if (!empty($_GET['date'])) {
+        $query_args['date_query'] = [
+            [
+                'after'     => sanitize_text_field($_GET['date']),
+                'inclusive' => true,
+            ],
+        ];
     }
 
-    $posts_query = new WP_Query($query_args);
-    $total_pages = $posts_query->max_num_pages;
+    $query = new WP_Query($query_args);
     ?>
 
-    <div class="wrap container">
-        <h1 class="text-center my-4"><i class="fa-solid fa-qrcode"></i> QR Codes List</h1>
+    <div class="wrap">
+        <h1 class="wp-heading-inline">QR Code List</h1>
+        <hr class="wp-header-end">
 
-        <!-- Load Bootstrap & FontAwesome -->
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
-        <!-- Filter Form -->
-        <form method="get" class="row g-3 mb-4">
-            <input type="hidden" name="page" value="qrg-admin-qr-list">
-            <div class="col-md-3">
-                <label for="post_type" class="form-label"><i class="fa-solid fa-filter"></i> Post Type:</label>
-                <select name="post_type" id="post_type" class="form-select" onchange="this.form.submit()">
-                    <option value="product" <?php selected($post_type, 'product'); ?>>WooCommerce Products</option>
-                    <option value="post" <?php selected($post_type, 'post'); ?>>Blog Posts</option>
+        <div class="qrg-filter-bar">
+            <form method="GET">
+                <input type="hidden" name="page" value="qrg-admin-qr-list">
+                <select name="post_type">
+                    <option value="post" <?php selected($post_type, 'post'); ?>>Posts</option>
                     <option value="page" <?php selected($post_type, 'page'); ?>>Pages</option>
+                    <option value="product" <?php selected($post_type, 'product'); ?>>Products</option>
                 </select>
-            </div>
-            <div class="col-md-3">
-                <label for="date_filter" class="form-label"><i class="fa-solid fa-calendar"></i> Date Filter:</label>
-                <input type="date" name="date_filter" id="date_filter" class="form-control" value="<?php echo esc_attr($date_filter); ?>" onchange="this.form.submit()">
-            </div>
-            <div class="col-md-3">
-                <label for="category_filter" class="form-label"><i class="fa-solid fa-folder"></i> Category:</label>
-                <select name="category_filter" id="category_filter" class="form-select" onchange="this.form.submit()">
-                    <option value="">All Categories</option>
-                    <?php
-                    $categories = get_categories();
-                    foreach ($categories as $category) {
-                        echo '<option value="' . esc_attr($category->slug) . '" ' . selected($category_filter, $category->slug, false) . '>' . esc_html($category->name) . '</option>';
-                    }
-                    ?>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label for="layout" class="form-label"><i class="fa-solid fa-eye"></i> View Mode:</label>
-                <select name="layout" id="layout" class="form-select" onchange="this.form.submit()">
-                    <option value="table" <?php selected($layout, 'table'); ?>>🔳 Table View</option>
-                    <option value="card" <?php selected($layout, 'card'); ?>>🃏 Card View</option>
-                </select>
-            </div>
-        </form>
+                <?php if ($post_type !== 'page') : ?>
+                    <select name="category">
+                        <option value="">All Categories</option>
+                        <?php
+                        $categories = get_categories(['taxonomy' => ($post_type === 'product' ? 'product_cat' : 'category')]);
+                        foreach ($categories as $category) {
+                            echo '<option value="' . esc_attr($category->slug) . '" ' . selected($_GET['category'] ?? '', $category->slug, false) . '>' . esc_html($category->name) . '</option>';
+                        }
+                        ?>
+                    </select>
+                <?php endif; ?>
+                <input type="date" name="date" value="<?php echo esc_attr($_GET['date'] ?? ''); ?>">
+                <button type="submit" class="button button-primary">Filter</button>
+            </form>
 
-        <div class="row row-cols-1 row-cols-md-4 g-4">
-            <?php if ($posts_query->have_posts()) : while ($posts_query->have_posts()) : $posts_query->the_post();
-                $post_id = get_the_ID();
-                $permalink = get_permalink($post_id);
-                $qr_url = 'https://quickchart.io/qr?text=' . urlencode($permalink) . '&size=500x500';
-                ?>
-                <div class="col">
-                    <div class="card text-center shadow-sm h-100 border">
-                        <div class="card-header fw-bold bg-white"> <?php the_title(); ?> </div>
-                        <div class="card-body d-flex justify-content-center align-items-center">
-                            <a href="<?php echo esc_url($qr_url); ?>" target="_blank">
-                                <img src="<?php echo esc_url($qr_url); ?>" class="img-fluid rounded" width="200" height="200">
-                            </a>
-                        </div>
-                        <div class="card-footer bg-white">
-                            <a href="<?php echo esc_url($qr_url); ?>" download="qr-<?php echo $post_id; ?>.png" class="btn btn-primary w-100">
-                                <i class="fa-solid fa-download"></i> Download
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            <?php endwhile; wp_reset_postdata(); else : ?>
-                <p>No posts found.</p>
-            <?php endif; ?>
+            <div class="qrg-view-switch">
+                <a href="?page=qrg-admin-qr-list&post_type=<?php echo $post_type; ?>&view=table"><i class="fas fa-table"></i></a>
+                <a href="?page=qrg-admin-qr-list&post_type=<?php echo $post_type; ?>&view=card"><i class="fas fa-th-large"></i></a>
+            </div>
         </div>
 
-        <!-- Pagination -->
-        <nav class="mt-4">
-            <ul class="pagination justify-content-center">
-                <?php
-                if ($total_pages > 1) {
-                    $pagination_args = [
-                        'base'      => add_query_arg('paged', '%#%'),
-                        'format'    => '',
-                        'current'   => $paged,
-                        'total'     => $total_pages,
-                        'prev_text' => '« Prev',
-                        'next_text' => 'Next »',
-                    ];
-                    echo paginate_links($pagination_args);
-                }
-                ?>
-            </ul>
-        </nav>
+        <?php if ($_GET['view'] === 'table') : ?>
+            <table class="wp-list-table widefat fixed striped">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>QR Code</th>
+                        <th>Download</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php while ($query->have_posts()) : $query->the_post(); ?>
+                        <tr>
+                            <td><?php the_title(); ?></td>
+                            <td><img src="<?php echo esc_url(qrg_generate_qr(get_permalink())); ?>" width="100"></td>
+                            <td><a href="<?php echo esc_url(qrg_generate_qr(get_permalink(), true)); ?>" download class="button">Download</a></td>
+                        </tr>
+                    <?php endwhile; ?>
+                </tbody>
+            </table>
+        <?php else : ?>
+            <div class="qrg-card-grid">
+                <?php while ($query->have_posts()) : $query->the_post(); ?>
+                    <div class="qrg-card">
+                        <h3 class="qrg-card-title"><?php the_title(); ?></h3>
+                        <div class="qrg-card-body">
+                            <img src="<?php echo esc_url(qrg_generate_qr(get_permalink())); ?>" class="qrg-qr-image">
+                        </div>
+                        <div class="qrg-card-footer">
+                            <a href="<?php echo esc_url(qrg_generate_qr(get_permalink(), true)); ?>" download class="button button-primary">Download QR</a>
+                        </div>
+                    </div>
+                <?php endwhile; ?>
+            </div>
+        <?php endif; ?>
+
+        <div class="qrg-pagination">
+            <?php
+            echo paginate_links([
+                'total'   => $query->max_num_pages,
+                'current' => $paged,
+                'format'  => '?page=qrg-admin-qr-list&post_type=' . $post_type . '&paged=%#%',
+                'prev_text' => __('« Prev'),
+                'next_text' => __('Next »'),
+            ]);
+            ?>
+        </div>
     </div>
 
-<?php
+    <style>
+        .qrg-card-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .qrg-card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            padding: 20px;
+        }
+
+        .qrg-card-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .qrg-card-body {
+            display: flex;
+            justify-content: center;
+        }
+
+        .qrg-qr-image {
+            width: 200px;
+            height: 200px;
+        }
+
+        .qrg-card-footer {
+            margin-top: 15px;
+        }
+
+        .qrg-filter-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .qrg-view-switch a {
+            font-size: 20px;
+            margin-left: 10px;
+            text-decoration: none;
+        }
+
+        .qrg-pagination {
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+    <?php
+    wp_reset_postdata();
 }
 ?>
