@@ -1,6 +1,34 @@
 <?php
 if (!defined('ABSPATH')) exit;
 
+// Add Admin Menu for QR Codes
+function qrg_admin_menu() {
+    add_menu_page(
+        'QR Codes List',
+        'QR Codes',
+        'manage_options',
+        'qrg-admin-qr-list',
+        'qrg_admin_qr_list_page',
+        'dashicons-admin-generic', // Temporary icon, replaced by FontAwesome via CSS
+        20
+    );
+}
+
+add_action('admin_menu', 'qrg_admin_menu');
+
+
+function qrg_admin_enqueue_styles() {
+    wp_enqueue_style('qrg-fontawesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css');
+    wp_add_inline_style('qrg-fontawesome', '
+        #adminmenu .toplevel_page_qrg-admin-qr-list div.wp-menu-image:before {
+            font-family: "Font Awesome 6 Free"; 
+            content: "\f029"; /* FontAwesome QR Code Unicode */
+            font-weight: 900;
+        }
+    ');
+}
+add_action('admin_enqueue_scripts', 'qrg_admin_enqueue_styles');
+
 function qrg_admin_qr_list_page() {
     $post_type = isset($_GET['post_type']) ? sanitize_text_field($_GET['post_type']) : 'post';
     $paged = isset($_GET['paged']) ? max(1, intval($_GET['paged'])) : 1;
