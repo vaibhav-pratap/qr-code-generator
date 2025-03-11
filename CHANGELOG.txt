@@ -1,0 +1,18 @@
+# Changelog - QR Codes Generator for WordPress
+==============================================
+
+## [1.0.0] - Initial Release - (2025-11-03)
+### Added:
+- ✅ **QR Code Generation for WordPress Posts, Pages, WooCommerce Products, and Orders**.
+- ✅ **QR Codes Automatically Displayed on WooCommerce Product Edit Page**.
+- ✅ **WooCommerce Admin Panel Menu for QR Code Management**.
+- ✅ **Dynamic QR Code Generation Based on WordPress Permalink Structure**.
+- ✅ **PNG Download Support (500x500) with Thumbnails (200x200)**.
+- ✅ **Shortcodes for Easy Display**:
+  - `[qr_code]` → Displays QR Code for the current post/page/product.
+  - `[qr_code_list post_type="product"]` → Lists QR Codes for all products/posts/pages.
+- ✅ **Secure and Optimized for Performance**.
+- ✅ **Compatible with WordPress 6.0+ and PHP 8.0+**.
+- ✅ **GitHub Auto-Update Integration**.
+
+---
