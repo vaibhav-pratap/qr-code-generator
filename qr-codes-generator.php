@@ -3,7 +3,7 @@
  * Plugin Name: QR Codes Generator for WordPress
  * Plugin URI:  https://github.com/vaibhav-pratap/qr-code-generator
  * Description: Automatically generates QR codes for WooCommerce Products, Orders, WordPress Posts, and Pages.
- * Version:     1.0.0
+ * Version:     1.0.1
  * Author:      Vaibhav Singh
  * Author URI:  https://github.com/vaibhav-pratap
  * License:     GPL v2 or later
@@ -25,7 +25,6 @@ define('QRG_PLUGIN_VERSION', '1.0.0');
 include_once QRG_PLUGIN_DIR . 'includes/qr-generator.php';
 include_once QRG_PLUGIN_DIR . 'includes/admin-qr-list.php';
 include_once QRG_PLUGIN_DIR . 'includes/post-type-qr.php';
-require_once QRG_PLUGIN_DIR . 'includes/shortcodes.php'
 include_once QRG_PLUGIN_DIR . 'includes/updater.php';
 
 // Plugin Activation Hook
